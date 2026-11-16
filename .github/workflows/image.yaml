@@ -44,5 +44,5 @@ jobs:
             echo "::warning::DX_INFRA_TOKEN isn't set, so infra.dx doesn't know about this image."
             exit 0
           fi
-          gh workflow run update-tag.yaml -R zimmerman-team/DX \
+          gh workflow run update-tag.yaml -R zimmerman-team/dataxplorer \
             -f service="$SERVICE" -f branch="$GITHUB_REF_NAME" -f tag="$GITHUB_SHA"
