@@ -47,6 +47,25 @@ DX_BACKEND_URL=<URL to DX Backend, localhost would be http://localhost:4004>
 PARSED_DATA_FILES_PATH=<directory where the parsed data files are stored>
 ```
 
+## Running it
+
+This repo has the same `make` commands as the other DX repos, which [infra.dx](https://github.com/zimmerman-team/DX) clones side by side (`make repos` there).
+
+| Command | What it does |
+|---|---|
+| `make setup` | Install dependencies, build rawgraphs-charts, create `.env` from `.env.example` |
+| `make dev` | Run the server on http://localhost:4200, restarting on changes |
+| `make charts` | Rebuild rawgraphs-charts (`RAWGRAPHS_DIR=../rawgraphs-charts` to use your own checkout) |
+| `make build` | Build the Docker image, as CI does |
+| `make logs` | Follow `logging/dx_server.log` |
+| `make migrate` | Update the database schema |
+
+The chart renderer (`src/utils/renderChart.ts`) imports `rawgraphs-charts/lib` from this repo's root. `make charts` builds it there from the commit the Dockerfile pins (`RAWGRAPHS_REF`, on rawgraphs-charts' `feat/DX-137`, the same commit the client pins), so local runs and the image render with the same charts. To try chart changes, point it at your checkout: `make charts RAWGRAPHS_DIR=../rawgraphs-charts`.
+
+`make dev` needs Node 22 (`nvm use`), and MongoDB and Redis on this machine: `make native` in infra.dx starts them along with the rest of the stack. To run everything in Docker instead, use `make dev` in infra.dx.
+
+Production runs the Docker image: CI builds it on every push (`.github/workflows/image.yaml`) and infra.dx deploys it.
+
 ## Install dependencies
 
 Whenever dependencies in `package.json` are changed, run the following command:
@@ -71,11 +90,9 @@ yarn dev
 
 Open http://localhost:4200 in your browser. Changes will be reflected once you save them.
 
-## Build and deploy with pm2
+## Build and deploy
 
-```sh
-yarn deploy
-```
+Servers run the Docker image (see [Running it](#running-it)). `yarn deploy` (pm2) is only for the old setup and goes away once every server runs the image.
 
 ## Fix code style and formatting issues
 

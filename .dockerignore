@@ -1,0 +1,11 @@
+# Keep secrets, local builds and dependencies out of the image.
+.git
+node_modules
+dist
+.env
+.env.*
+google_keys
+logging/*
+!logging/.gitignore
+# The image builds its own (see Dockerfile).
+rawgraphs-charts
