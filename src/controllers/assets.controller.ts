@@ -21,6 +21,7 @@ import {
 import axios from 'axios';
 import _ from 'lodash';
 import {winstonLogger as logger} from '../config/logger/winston-logger';
+import {DX_BACKEND_URL} from '../config/services';
 import {cacheInterceptor} from '../interceptors/cache.interceptor';
 import {Chart, Dataset, Story} from '../models';
 import {
@@ -503,23 +504,10 @@ export class AssetController {
 
   private async deleteDatasetFromBackendService(id: string): Promise<void> {
     try {
-      const backendHost = this.getBackendHost();
-      await axios.post(`http://${backendHost}:4004/delete-dataset/dx${id}`);
+      await axios.post(`${DX_BACKEND_URL}/delete-dataset/dx${id}`);
       logger.info(`Dataset ${id} successfully removed from DX Backend`);
     } catch (error) {
       logger.error(`Failed to remove dataset ${id} from DX Backend:`, error);
     }
-  }
-
-  private getBackendHost(): string {
-    if (process.env.BACKEND_SUBDOMAIN) {
-      return 'dx-backend';
-    }
-
-    if (process.env.ENV_TYPE && process.env.ENV_TYPE !== 'prod') {
-      return `dx-backend-${process.env.ENV_TYPE}`;
-    }
-
-    return 'localhost';
   }
 }

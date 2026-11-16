@@ -20,6 +20,7 @@ import axios from 'axios';
 import _ from 'lodash';
 import {DatasetRepository} from '../repositories';
 import {getUserPlanData} from '../utils/planAccess';
+import {DX_BACKEND_URL} from '../config/services';
 
 interface UploadedFile {
   fieldname: string;
@@ -29,10 +30,6 @@ interface UploadedFile {
   size: number;
   filename: string;
 }
-
-let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-if (process.env.ENV_TYPE !== 'prod')
-  host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
 
 /**
  * A controller to handle file uploads using multipart/form-data media type
@@ -128,7 +125,7 @@ export class FileUploadController {
     for (const uploadedFile of files) {
       try {
         const response = await axios.post(
-          `http://${host}:4004/dataset-size`,
+          `${DX_BACKEND_URL}/dataset-size`,
           userDatasets.map(d => d.id),
         );
         if (
@@ -147,14 +144,14 @@ export class FileUploadController {
         }
       } catch (e) {
         console.log('DX Backend upload failed', e);
-        return {error: e.response.data.result};
+        return {error: e.response?.data?.result ?? e.message};
       }
       await axios
-        .post(`http://${host}:4004/upload-file/${uploadedFile.filename}`)
+        .post(`${DX_BACKEND_URL}/upload-file/${uploadedFile.filename}`)
         .then(_ => console.log('DX Backend upload complete'))
         .catch(e => {
           console.log('DX Backend upload failed', e);
-          return {error: e.response.data.result};
+          return {error: e.response?.data?.result ?? e.message};
         });
     }
     return {files, fields: request.body};

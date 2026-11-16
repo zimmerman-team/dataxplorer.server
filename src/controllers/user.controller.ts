@@ -17,6 +17,7 @@ import {ObjectId} from 'bson';
 import _ from 'lodash';
 import {UserProfile} from '../authentication-strategies/user-profile';
 import {winstonLogger as logger} from '../config/logger/winston-logger';
+import {DX_BACKEND_URL} from '../config/services';
 import {Story} from '../models';
 import {
   ChartRepository,
@@ -30,10 +31,6 @@ import {
 } from '../utils/intercom';
 import {getUserPlanData} from '../utils/planAccess';
 import {handleDeleteCache} from '../utils/redis';
-
-let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-if (process.env.ENV_TYPE !== 'prod')
-  host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
 
 export class UserController {
   constructor(@inject(RestBindings.Http.REQUEST) private req: Request) {}
@@ -108,7 +105,7 @@ export class UserController {
         );
 
         await axios
-          .post(`http://${host}:4004/duplicate-datasets`, datasetsIds)
+          .post(`${DX_BACKEND_URL}/duplicate-datasets`, datasetsIds)
           .then(_ => {
             logger.info(
               `route <users/duplicate-assets> -  DX Backend duplication complete`,
@@ -119,9 +116,9 @@ export class UserController {
             console.log('DX Backend duplication failed', e);
             logger.error(
               `route <users/duplicate-assets> -  DX Backend duplication failed`,
-              e.response.data.result,
+              e.response?.data?.result ?? e.message,
             );
-            return {error: e.response.data.result};
+            return {error: e.response?.data?.result ?? e.message};
           });
 
         // Duplicate  Charts
@@ -217,7 +214,7 @@ export class UserController {
         ).map(d => d.id);
 
         await axios
-          .post(`http://${host}:4004/delete-datasets`, datasetIds)
+          .post(`${DX_BACKEND_URL}/delete-datasets`, datasetIds)
           .then(_ => {
             logger.info(
               `route <users/delete-account> -  DX Backend deletion complete`,
@@ -228,9 +225,9 @@ export class UserController {
             console.log('DX Backend deletion failed', e);
             logger.error(
               `route <users/delete-account> -  DX Backend deletion failed`,
-              e.response.data.result,
+              e.response?.data?.result ?? e.message,
             );
-            return {error: e.response.data.result};
+            return {error: e.response?.data?.result ?? e.message};
           });
 
         await this.datasetRepository.deleteAll({owner: userId});
@@ -422,7 +419,7 @@ export class UserController {
       }),
     );
     await axios
-      .post(`http://${host}:4004/duplicate-datasets`, datasetsIds)
+      .post(`${DX_BACKEND_URL}/duplicate-datasets`, datasetsIds)
       .then(_ => {
         logger.info(
           `route <users/duplicate-assets> -  DX Backend duplication complete`,
@@ -433,9 +430,9 @@ export class UserController {
         console.log('DX Backend duplication failed', e);
         logger.error(
           `route <users/duplicate-assets> -  DX Backend duplication failed`,
-          e.response.data.result,
+          e.response?.data?.result ?? e.message,
         );
-        return {error: e.response.data.result};
+        return {error: e.response?.data?.result ?? e.message};
       });
 
     // Duplicate Charts

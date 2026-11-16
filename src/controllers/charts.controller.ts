@@ -25,6 +25,7 @@ import axios from 'axios';
 import fs from 'fs-extra';
 import _ from 'lodash';
 import {winstonLogger as logger} from '../config/logger/winston-logger';
+import {AIAPI_URL, DX_BACKEND_URL} from '../config/services';
 import {cacheInterceptor} from '../interceptors/cache.interceptor';
 import {Chart} from '../models';
 import {ChartRepository, DatasetRepository} from '../repositories';
@@ -33,10 +34,6 @@ import {duplicateName} from '../utils/duplicateName';
 import {getUserPlanData} from '../utils/planAccess';
 import {addOwnerNameToAssets, handleDeleteCache} from '../utils/redis';
 import {renderChartData} from '../utils/renderChart';
-
-let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-if (process.env.ENV_TYPE !== 'prod')
-  host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
 
 async function getChartsCount(
   chartRepository: ChartRepository,
@@ -226,15 +223,12 @@ export class ChartsController {
   @authenticate({strategy: 'auth0-jwt', options: {scopes: ['greet']}})
   @intercept(cacheInterceptor())
   async sampleData(@param.path.string('datasetId') datasetId: string) {
-    let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-    if (process.env.ENV_TYPE !== 'prod')
-      host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
     logger.info(
       `route </chart/sample-data/{datasetId}> Fetching sample data for dataset ${datasetId}`,
     );
 
     return axios
-      .get(`http://${host}:4004/sample-data/${datasetId}`)
+      .get(`${DX_BACKEND_URL}/sample-data/${datasetId}`)
       .then(res => {
         logger.info(
           `route </chart/sample-data/{datasetId}> Sample data fetched for dataset ${datasetId}`,
@@ -249,11 +243,13 @@ export class ChartsController {
       })
       .catch(e => {
         logger.error(
-          `route </chart/sample-data/{datasetId}> Error fetching sample data for dataset ${datasetId}; ${e.response.data.result}`,
+          `route </chart/sample-data/{datasetId}> Error fetching sample data for dataset ${datasetId}; ${
+            e.response?.data?.result ?? e.message
+          }`,
         );
         return {
           data: [],
-          error: e.response.data.result,
+          error: e.response?.data?.result ?? e.message,
         };
       });
   }
@@ -263,14 +259,11 @@ export class ChartsController {
   @response(200)
   @intercept(cacheInterceptor())
   async sampleDataConnect(@param.path.string('datasetId') datasetId: string) {
-    let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-    if (process.env.ENV_TYPE !== 'prod')
-      host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
     logger.info(
       `route </chart/sample-data/{datasetId}> Fetching sample data for dataset ${datasetId}`,
     );
     return axios
-      .get(`http://${host}:4004/sample-data/${datasetId}`)
+      .get(`${DX_BACKEND_URL}/sample-data/${datasetId}`)
       .then(res => {
         logger.info(
           `route </chart/sample-data/{datasetId}> Sample data fetched for dataset ${datasetId}`,
@@ -286,11 +279,13 @@ export class ChartsController {
       .catch(e => {
         console.log(e);
         logger.error(
-          `route </chart/sample-data/{datasetId}> Error fetching sample data for dataset ${datasetId}; ${e.response.data.result}`,
+          `route </chart/sample-data/{datasetId}> Error fetching sample data for dataset ${datasetId}; ${
+            e.response?.data?.result ?? e.message
+          }`,
         );
         return {
           data: [],
-          error: e.response.data.result,
+          error: e.response?.data?.result ?? e.message,
         };
       });
   }
@@ -304,14 +299,11 @@ export class ChartsController {
     if (!dataset.public && !dataset.baseline && dataset.owner !== 'anonymous') {
       return {error: 'Unauthorized'};
     }
-    let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-    if (process.env.ENV_TYPE !== 'prod')
-      host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
     logger.info(
       `route </chart/sample-data/{datasetId}> Fetching sample data for dataset ${datasetId}`,
     );
     return axios
-      .get(`http://${host}:4004/sample-data/${datasetId}`)
+      .get(`${DX_BACKEND_URL}/sample-data/${datasetId}`)
       .then(res => {
         logger.info(
           `route </chart/sample-data/{datasetId}> Sample data fetched for dataset ${datasetId}`,
@@ -327,11 +319,13 @@ export class ChartsController {
       .catch(e => {
         console.log(e);
         logger.error(
-          `route </chart/sample-data/{datasetId}> Error fetching sample data for dataset ${datasetId}; ${e.response.data.result}`,
+          `route </chart/sample-data/{datasetId}> Error fetching sample data for dataset ${datasetId}; ${
+            e.response?.data?.result ?? e.message
+          }`,
         );
         return {
           data: [],
-          error: e.response.data.result,
+          error: e.response?.data?.result ?? e.message,
         };
       });
   }
@@ -451,15 +445,12 @@ export class ChartsController {
   @authenticate({strategy: 'auth0-jwt', options: {scopes: ['greet']}})
   @intercept(cacheInterceptor())
   async getChartTypes(@param.query.string('id') id: string) {
-    let host = process.env.AIAPI_SUBDOMAIN ? 'ai-api' : 'localhost';
-    if (process.env.ENV_TYPE !== 'prod')
-      host = process.env.ENV_TYPE ? `ai-api-${process.env.ENV_TYPE}` : host;
     logger.info(
       `route</chart-types/ai-suggestions> Fetching AI suggestions for chart type`,
     );
     try {
       const response = await axios.get(
-        `http://${host}:5000/chart-suggest/ai-report-builder-from-existing?id=${id}`,
+        `${AIAPI_URL}/chart-suggest/ai-report-builder-from-existing?id=${id}`,
         {
           headers: {
             Authorization: 'ZIMMERMAN',

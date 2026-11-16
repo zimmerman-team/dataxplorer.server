@@ -36,10 +36,6 @@ import {duplicateName} from '../utils/duplicateName';
 import {getUserPlanData} from '../utils/planAccess';
 import {addOwnerNameToAssets, handleDeleteCache} from '../utils/redis';
 
-let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-if (process.env.ENV_TYPE !== 'prod')
-  host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
-
 async function getStoriesCount(
   storyRepository: StoryRepository,
   owner?: string,

@@ -32,6 +32,7 @@ import {
 import {RequestHandler} from 'express-serve-static-core';
 import _ from 'lodash';
 import {winstonLogger as logger} from '../config/logger/winston-logger';
+import {DX_BACKEND_URL} from '../config/services';
 import {cacheInterceptor} from '../interceptors/cache.interceptor';
 import {getUsersOrganizationMembers} from '../utils/auth';
 import {duplicateName} from '../utils/duplicateName';
@@ -43,9 +44,6 @@ type FileUploadHandler = RequestHandler;
 const FILE_UPLOAD_SERVICE = BindingKey.create<FileUploadHandler>(
   'services.FileUpload',
 );
-let host = process.env.BACKEND_SUBDOMAIN ? 'dx-backend' : 'localhost';
-if (process.env.ENV_TYPE !== 'prod')
-  host = process.env.ENV_TYPE ? `dx-backend-${process.env.ENV_TYPE}` : host;
 
 const getDatasets = async (
   datasetRepository: DatasetRepository,
@@ -398,9 +396,7 @@ export class DatasetController {
     // }
 
     return axios
-      .get(
-        `http://${host}:4004/dataset/${id}?page=${page}&page_size=${pageSize}`,
-      )
+      .get(`${DX_BACKEND_URL}/dataset/${id}?page=${page}&page_size=${pageSize}`)
       .then(res => {
         logger.info(
           `route </datasets/{id}/data> Data fetched for dataset ${id}`,
@@ -441,9 +437,7 @@ export class DatasetController {
       return {error: 'Unauthorized'};
     }
     return axios
-      .get(
-        `http://${host}:4004/dataset/${id}?page=${page}&page_size=${pageSize}`,
-      )
+      .get(`${DX_BACKEND_URL}/dataset/${id}?page=${page}&page_size=${pageSize}`)
       .then(res => {
         logger.info(
           `route </datasets/{id}/data> Data fetched for dataset ${id}`,
@@ -602,10 +596,7 @@ export class DatasetController {
   }
   private async deleteFromBackendService(id: string): Promise<void> {
     try {
-      const backendHost = this.getBackendHost();
-      const res = await axios.post(
-        `http://${backendHost}:4004/delete-dataset/dx${id}`,
-      );
+      const res = await axios.post(`${DX_BACKEND_URL}/delete-dataset/dx${id}`);
 
       logger.info(`Dataset ${id} successfully removed from DX Backend`);
       return res.data;
@@ -613,18 +604,6 @@ export class DatasetController {
       logger.error(`Failed to remove dataset ${id} from DX Backend:`, error);
       // Don't throw - continue with local cleanup even if backend fails
     }
-  }
-
-  private getBackendHost(): string {
-    if (process.env.BACKEND_SUBDOMAIN) {
-      return 'dx-backend';
-    }
-
-    if (process.env.ENV_TYPE && process.env.ENV_TYPE !== 'prod') {
-      return `dx-backend-${process.env.ENV_TYPE}`;
-    }
-
-    return 'localhost';
   }
 
   @get('/dataset/duplicate/{id}')
@@ -682,7 +661,7 @@ export class DatasetController {
     );
 
     await axios
-      .post(`http://${host}:4004/duplicate-dataset/${id}/${newDataset.id}`)
+      .post(`${DX_BACKEND_URL}/duplicate-dataset/${id}/${newDataset.id}`)
       .then(_ => {
         logger.info(
           `route </dataset/duplicate/{id}> -  DX Backend duplication complete`,
@@ -690,12 +669,15 @@ export class DatasetController {
         console.log('DX Backend duplication complete');
       })
       .catch(e => {
-        console.log('DX Backend duplication failed', e.response.data.result);
+        console.log(
+          'DX Backend duplication failed',
+          e.response?.data?.result ?? e.message,
+        );
         logger.error(
           `route </dataset/duplicate/{id}> -  DX Backend duplication failed`,
           e,
         );
-        return {error: e.response.data.result};
+        return {error: e.response?.data?.result ?? e.message};
       });
     await handleDeleteCache({
       userId,
@@ -740,7 +722,7 @@ export class DatasetController {
         'route </external-sources/search> -  Search external sources',
       );
       const response = await axios.post(
-        `http://${host}:4004/external-sources/search-limited`,
+        `${DX_BACKEND_URL}/external-sources/search-limited`,
         {
           owner: _.get(this.req, 'user.sub', 'anonymous'),
           query: q,
@@ -761,12 +743,12 @@ export class DatasetController {
       }
       return {result: response.data.result};
     } catch (e) {
-      console.log(e.response.data.result);
+      console.log(e.response?.data?.result ?? e.message);
       logger.error(
         'route </external-sources/search> -  Error',
-        e.response.data.result,
+        e.response?.data?.result ?? e.message,
       );
-      return {error: e.response.data.result};
+      return {error: e.response?.data?.result ?? e.message};
     }
   }
 
@@ -795,7 +777,7 @@ export class DatasetController {
         'route </external-sources/download> -  Download external sources',
       );
       const response = await axios.post(
-        `http://${host}:4004/external-sources/download`,
+        `${DX_BACKEND_URL}/external-sources/download`,
         {
           externalSource: {
             ...externalSource,
@@ -811,7 +793,7 @@ export class DatasetController {
     } catch (e) {
       console.log(e);
       logger.error('route </external-sources/download> -  Error', e);
-      return {error: e.response.data.result};
+      return {error: e.response?.data?.result ?? e.message};
     }
   }
 }
