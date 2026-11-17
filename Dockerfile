@@ -2,7 +2,7 @@
 # SHA; infra.dx runs it. Build it locally with `make build`.
 
 # ---- rawgraphs-charts, which the chart renderer imports ----------------------
-FROM node:22.21-alpine3.21 AS charts
+FROM node:22.23-alpine3.23 AS charts
 RUN apk add --no-cache git
 # The rawgraphs-charts commit the charts are rendered with (on feat/DX-137; the
 # client's Dockerfile pins the same one). `make charts` builds the same one too.
@@ -20,7 +20,7 @@ RUN yarn install --frozen-lockfile --network-timeout 600000 \
  && yarn install --production --frozen-lockfile --ignore-scripts --network-timeout 600000
 
 # ---- the server -------------------------------------------------------------
-FROM node:22.21-alpine3.21
+FROM node:22.23-alpine3.23
 WORKDIR /app
 
 COPY package.json yarn.lock ./
